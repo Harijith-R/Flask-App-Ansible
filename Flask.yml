@@ -1,0 +1,71 @@
+---
+- hosts: webserver
+  become: yes
+  gather_facts: no
+  pre_tasks:
+    - name: 'Installing Dependencies'
+      raw: sudo yum install python2 python2-pip -y
+
+  tasks:
+
+# Installing full packages, dependencies and requirements:
+
+  - name: Installing Python Packages
+    pip: name={{ item }} state=present
+    with_items:
+    - flask
+    - gunicorn
+    - supervisor
+
+  - name: Creating Supervisord directory
+    file:
+      path: /etc/supervisord
+      state: directory
+
+  - name: Creating Supervisord extra configuration directory
+    file:
+      path: /etc/supervisord/conf.d
+      state: directory
+
+  - name: Supervisord configuration initialization
+    shell: "echo_supervisord_conf > /etc/supervisord/supervisord.conf"
+
+
+  - name: Creating Softlink which adds Shortcuts to /etc/
+    file:
+      src: /etc/supervisord/supervisord.conf
+      dest: /etc/supervisord.conf
+      state: link
+
+  - name: Adding the include directory to hold extra service scripts
+    lineinfile:
+      path: /etc/supervisord/supervisord.conf
+      line: "[include]\nfiles = conf.d/*.conf"
+    
+  - name: Creating systemd supervisord.service unit
+    get_url:
+      url: https://raw.githubusercontent.com/Harijith-R/Flask-App-Ansible/master/supervisord.service
+      dest: /usr/lib/systemd/system/supervisord.service
+
+  - name: Creating Sample Flask Application Directory
+    file:
+      path: /var/flask
+      state: directory
+
+  - name: Creating Directory to run harijith-sample-app.py
+    file:
+      path: /var/log/harijith-sample-app
+      state: directory
+
+  - name: Uploading Sample Flask Application
+    get_url:
+      url: https://raw.githubusercontent.com/Harijith-R/Flask-App-Ansible/master/harijith-sample-app.py
+      dest: /var/flask/harijith-sample-app.py
+
+  - name: Uploading Supervisord script for gunicorn to run harijith-sample-app.py
+    get_url:
+      url: https://raw.githubusercontent.com/Harijith-R/Flask-App-Ansible/master/harijith-sample-app.conf
+      dest: /etc/supervisord/conf.d/harijith-sample-app.conf
+
+  - name: Starting Supervisord Service unit
+    service: name=supervisord state=restarted
