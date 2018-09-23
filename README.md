@@ -1,5 +1,5 @@
 # Flask-App-Ansible
-To deploy a sample Flask application on an Amazon EC2 AMI 2.
+This is an Ansible playbook to deploy a sample Flask application on an Amazon EC2 AMI 2. Please make sure to edit the hosts file before usage.
 
 ### Edit the hosts file with the IP and Key before usage:
 
